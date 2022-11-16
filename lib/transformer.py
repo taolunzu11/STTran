@@ -147,7 +147,7 @@ class transformer(nn.Module):
         position_embed = torch.zeros([l * 2, b - 1, features.shape[1]]).to(features.device)
         idx = -torch.ones([l * 2, b - 1]).to(features.device)
         idx_plus = -torch.ones([l * 2, b - 1], dtype=torch.long).to(features.device) #TODO
-
+        '''条件句， current停输出'''
         # sliding window size = 2
         for j in range(b - 1):
             global_input[:torch.sum((im_idx == j) + (im_idx == j + 1)), j, :] = local_output[(im_idx == j) + (im_idx == j + 1)]
@@ -156,7 +156,7 @@ class transformer(nn.Module):
 
             position_embed[:torch.sum(im_idx == j), j, :] = self.position_embedding.weight[0]
             position_embed[torch.sum(im_idx == j):torch.sum(im_idx == j)+torch.sum(im_idx == j+1), j, :] = self.position_embedding.weight[1]
-
+        '''条件句，long term停，接gru'''
         global_masks = (torch.sum(global_input.view(-1, features.shape[1]),dim=1) == 0).view(l * 2, b - 1).permute(1, 0)
         # temporal decoder
         global_output, global_attention_weights = self.global_attention(global_input, global_masks, position_embed)
@@ -184,7 +184,8 @@ class transformer(nn.Module):
                 output[im_idx == j + 1] = global_output[:, j][idx[:, j] == j + 1]
 
         return output, global_attention_weights, local_attention_weights
-
+       '''short term输出'''
+        
 
 def _get_clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
